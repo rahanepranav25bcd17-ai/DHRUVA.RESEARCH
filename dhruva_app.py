@@ -11,21 +11,19 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- GOOGLE SHEETS CONNECTION ---
+# --- DATABASE CONNECTION ---
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
-except Exception as e:
-    st.error(f"Connection Error: Check Secrets and requirements.txt")
+except Exception:
     conn = None
 
-# --- AUTHENTICATION STATE ---
-if 'auth_status' not in st.session_state: 
-    st.session_state['auth_status'] = False
+# --- AUTH STATE ---
+if 'auth_status' not in st.session_state: st.session_state['auth_status'] = False
 
 query_params = st.query_params
 access_code = query_params.get("access", None)
 
-# 2. IPS PREMIUM CSS (SKY BLUE THEME)
+# 2. IPS PREMIUM CSS (SKY BLUE)
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Raleway:wght@300;400&display=swap');
@@ -60,7 +58,7 @@ with tab1:
         try: st.image("gaurav_tiwari.png", use_container_width=True)
         except: st.info("Gaurav Tiwari Image")
     with col_i2:
-        st.markdown(f"<div class='ips-block'><h3 style='font-family:Cinzel;'>OUR INSPIRATION</h3><p style='font-style:italic; font-size:18px;'>\"Fear is just missing data. Logic is the cure.\"</p><p style='color:#00D4FF; font-weight:bold;'>- Late Rev. Gaurav Tiwari</p></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='ips-block'><h3 style='font-family:Cinzel;'>OUR INSPIRATION</h3><p style='font-style:italic; font-size:18px;'>\"Fear is just missing data. Logic is the cure.\"</p><p style='color:#00D4FF; font-weight:bold;'>- Late Rev. Gaurav Tiwari</p><p style='color:#777; font-size:14px;'>Founder, Indian Paranormal Society</p></div>", unsafe_allow_html=True)
 
 with tab2:
     col_dir1, col_dir2 = st.columns([1, 2])
@@ -69,7 +67,8 @@ with tab2:
         except: st.info("Founder Photo")
     with col_dir2:
         st.markdown("<h3 style='color:#00D4FF !important;'>Pranav Anil Rahane</h3>", unsafe_allow_html=True)
-        st.write("We are a team of young researchers driven by logic and science, bridging folklore and physics.")
+        st.caption("Founder & Chief Investigator")
+        st.write("D.H.R.U.V.A. represents a new generation of researchers. We are a youth-led unit dedicated to uncovering truths through physics and engineering. Logic is our only tool.")
 
 with tab3:
     if conn:
@@ -77,13 +76,13 @@ with tab3:
             df_inv = conn.read(worksheet="Investigations")
             for _, m in df_inv.iterrows():
                 st.markdown(f"<div class='ips-block'><h4>{m['Title']}</h4><p>{m['Details']}</p><b>VERDICT: {m['Verdict']}</b></div>", unsafe_allow_html=True)
-        except: st.info("No investigations declassified yet.")
+        except: st.info("No cases available yet.")
 
 with tab4:
     with st.form("anomaly_form", clear_on_submit=True):
         c1, c2 = st.columns(2)
         with c1: name = st.text_input("NAME"); phone = st.text_input("PHONE")
-        with c2: loc = st.text_input("LOCATION"); m_type = st.selectbox("TYPE", ["Haunting", "UFO", "Other"])
+        with c2: loc = st.text_input("LOCATION"); m_type = st.selectbox("MYSTERY TYPE", ["Haunting", "UFO", "Shadow", "Other"])
         desc = st.text_area("DESCRIPTION")
         if st.form_submit_button("TRANSMIT INTEL"):
             if conn:
@@ -92,14 +91,14 @@ with tab4:
                     existing = conn.read(worksheet="Reports")
                     updated = pd.concat([existing, new_rep], ignore_index=True)
                     conn.update(worksheet="Reports", data=updated)
-                    st.success("INTEL ARCHIVED IN HQ DATABASE.")
-                except Exception as e: st.error("Database connection error.")
-            else: st.warning("Sheet not connected.")
+                    st.success("INTEL ARCHIVED.")
+                except: st.error("Storage error.")
 
 with tab5:
     st.markdown(f'<div class="green-box-container"><div style="color:#555; text-align:left; font-size:12px;">Email:</div><a href="mailto:team.dhruva.research@gmail.com" class="email-text">✉️ team.dhruva.research@gmail.com</a></div>', unsafe_allow_html=True)
     with st.form("contact_form", clear_on_submit=True):
-        cn = st.text_input("NAME"); ce = st.text_input("EMAIL"); cm = st.text_area("MESSAGE")
+        st.markdown("<h4 style='text-align:center;'>SEND US A MESSAGE</h4>", unsafe_allow_html=True)
+        cn = st.text_input("FULL NAME"); ce = st.text_input("EMAIL"); cm = st.text_area("MESSAGE")
         if st.form_submit_button("SEND MESSAGE"):
             if conn:
                 try:
@@ -107,8 +106,8 @@ with tab5:
                     existing = conn.read(worksheet="Messages")
                     updated = pd.concat([existing, new_msg], ignore_index=True)
                     conn.update(worksheet="Messages", data=updated)
-                    st.success("MESSAGE TRANSMITTED.")
-                except Exception as e: st.error("Database error.")
+                    st.success("MESSAGE SENT.")
+                except: st.error("Database error.")
 
 # 5. HIDDEN ADMIN PANEL
 if access_code == "classified":
@@ -122,7 +121,6 @@ if access_code == "classified":
                     st.session_state['auth_status'] = True
                     st.rerun()
                 else: st.error("ACCESS DENIED")
-        
         if st.session_state['auth_status']:
             st.success("DIRECTOR ONLINE")
             if st.button("LOGOUT"):
@@ -139,6 +137,6 @@ if access_code == "classified":
                                 updated = pd.concat([existing, new_case], ignore_index=True)
                                 conn.update(worksheet="Investigations", data=updated)
                                 st.success("Case Published.")
-                            except Exception as e: st.error("Update failed.")
+                            except: st.error("Update failed.")
 
 st.markdown("<div style='text-align:center; color:#333; font-size:12px; padding:40px;'>© 2026 D.H.R.U.V.A. | LOGIC OVER FEAR</div>", unsafe_allow_html=True)
